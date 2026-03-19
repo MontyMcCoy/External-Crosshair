@@ -1,0 +1,910 @@
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font-sans); background: #1a1a2a; }
+
+.app { display: flex; gap: 0; width: 100%; height: 100%; min-height: 460px; border: none; border-radius: 0; overflow: hidden; }
+
+.preview-pane {
+  flex: 1 1 0;
+  background: rgba(75, 75, 75, 0.8);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 36px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 36px);
+}
+
+.crosshair-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+#crosshair-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.preview-label {
+  position: absolute;
+  top: 8px; left: 10px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.signature {
+  position: absolute;
+  bottom: 8px; left: 10px;
+  font-size: 10px;
+  font-family: 'Bookman Old Style';
+  color:  rgba(255,255,255,0.25);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.crosshair-container {
+  position: relative;
+  width: 160px; height: 160px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+#crosshair-canvas {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.controls-pane {
+  width:  250px;
+  height: 100%;
+  background: rgb(75, 75, 75);
+  border-left: 0.5px solid var(--color-border-tertiary);
+  overflow-y: auto;
+}
+
+.ctrl-section {
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  padding: 8px 10px;
+}
+.ctrl-section:last-child { border-bottom: none; }
+
+.section-title {
+  font-size: 10px;
+  font-weight: 500;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 7px;
+}
+
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.ctrl-row:last-child { margin-bottom: 0; }
+
+.ctrl-label {
+  font-size: 11px;
+  color: white;
+  min-width: 62px;
+  flex-shrink: 0;
+}
+
+.ctrl-row input[type=range] {
+  flex: 1;
+  height: 3px;
+  accent-color: #5B8DEF;
+}
+
+.ctrl-val {
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  min-width: 24px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.style-btn {
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 5px;
+  padding: 5px 0;
+  font-size: 10px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.12s;
+}
+.style-btn:hover { border-color: var(--color-border-secondary); color: white; }
+.style-btn.active { border-color: #5B8DEF; background: rgba(91,141,239,0.08); color: #5B8DEF; }
+.style-btn svg { width: 15px; height: 15px; }
+
+.color-grid { display: flex; gap: 5px; flex-wrap: wrap; }
+
+.color-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.1s;
+  flex-shrink: 0;
+}
+.color-dot:hover { transform: scale(1.15); }
+.color-dot.active { border-color: var(--color-text-primary); }
+
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+input[type=color] {
+  width: 28px; height: 22px;
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  padding: 1px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.toggle-row:last-child { margin-bottom: 0; }
+
+.toggle-label { font-size: 11px; color: white; }
+
+.toggle {
+  width: 30px; height: 17px;
+  background: var(--color-border-tertiary);
+  border-radius: 9px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  flex-shrink: 0;
+}
+.toggle.on { background: #5B8DEF; }
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 11px; height: 11px;
+  background: white;
+  border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(13px); }
+
+.preset-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.preset-save { display: flex; gap: 4px; margin-top: 6px; }
+.preset-save input {
+  flex: 1;
+  padding: 4px 7px;
+  font-size: 11px;
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 4px;
+  background: rgb(35, 35, 35);
+  color: white;
+}
+.preset-save input::placeholder { color: rgba(255,255,255,0.5); }
+.preset-save button { padding: 3px 10px; }
+.preset-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 4px;
+  background: black;
+  color: white;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.preset-btn:hover { border-color: var(--color-border-secondary); color: white; }
+
+.dpad-section { display: flex; align-items: center; gap: 10px; }
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 22px);
+  grid-template-rows: repeat(3, 22px);
+  gap: 2px;
+  flex-shrink: 0;
+}
+.dpad-btn {
+  width: 22px; height: 22px;
+  background: rgb(55,55,55);
+  border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 3px;
+  color: #5B8DEF;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .1s;
+  user-select: none;
+}
+.dpad-btn:hover { background: rgb(75,75,75); }
+.dpad-btn:active { background: #5B8DEF; color: white; }
+.dpad-empty { width: 22px; height: 22px; }
+.dpad-info { font-size: 10px; color: rgba(255,255,255,0.4); line-height: 1.5; }
+.dpad-reset {
+  font-size: 10px; padding: 2px 7px;
+  border: 0.5px solid rgba(255,255,255,0.2);
+  border-radius: 3px;
+  background: rgb(55,55,55);
+  color: rgba(255,255,255,0.5);
+  cursor: pointer; margin-top: 4px; display: block;
+  transition: all .1s;
+}
+.dpad-reset:hover { border-color: #f87171; color: #f87171; }
+
+.hk-row { display: flex; align-items: center; justify-content: space-between; }
+.hk-label { font-size: 11px; color: white; }
+.hk-btn {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 2px 8px;
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: 4px;
+  background: var(--color-background-secondary);
+  color: white;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.hk-btn:hover { border-color: #5B8DEF; color: #5B8DEF; }
+.hk-btn.listening { border-color: #facc15; color: #facc15; animation: blink .6s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+</style>
+
+<div class="app">
+  <div class="preview-pane">
+    <span class="preview-label">preview</span>
+    <div class="crosshair-container">
+      <canvas id="crosshair-canvas" width="200" height="200"></canvas>
+    </div>
+    <span class="signature">Monty's External Crosshair</span>
+  </div>
+
+  <div class="controls-pane">
+
+    <div class="ctrl-section">
+      <div class="section-title">presets</div>
+      <div class="preset-row">
+        <button type="button" class="preset-btn" onclick="applyPreset('default')">default</button>
+        <button type="button" class="preset-btn" onclick="applyPreset('dot')">dot</button>
+        <button type="button" class="preset-btn" onclick="applyPreset('sniper')">sniper</button>
+        <button type="button" class="preset-btn" onclick="applyPreset('circle')">circle</button>
+      </div>
+      <div class="preset-row" id="user-preset-row"></div>
+      <div class="preset-save">
+        <input type="text" id="preset-name" placeholder="preset name">
+        <button type="button" class="preset-btn" onclick="savePreset()">save</button>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="section-title">style</div>
+      <div class="style-grid">
+        <button type="button" class="style-btn active" id="style-cross" onclick="setStyle('cross')">
+          <svg viewBox="0 0 20 20" fill="none"><line x1="10" y1="2" x2="10" y2="18" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5"/></svg>cross
+        </button>
+        <button type="button" class="style-btn" id="style-circle" onclick="setStyle('circle')">
+          <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/></svg>circle
+        </button>
+        <button type="button" class="style-btn" id="style-dot" onclick="setStyle('dot')">
+          <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" fill="currentColor"/></svg>dot
+        </button>
+        <button type="button" class="style-btn" id="style-heart" onclick="setStyle('heart')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-4.35-6-9.5S7 4 12 8.5 18 4 18 11.5 12 21 12 21z"/></svg>heart
+        </button>
+        <button type="button" class="style-btn" id="style-custom" onclick="setStyle('custom')">
+          <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="6" r="1" fill="currentColor"/><path d="M2 14l4-4 4 4" stroke="currentColor" stroke-width="1.5"/></svg>custom
+        </button>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="section-title">size</div>
+      <div class="ctrl-row" id="length-row">
+        <span class="ctrl-label">length</span>
+        <input type="range" id="r-length" min="2" max="30" value="10" step="1" oninput="update()">
+        <span class="ctrl-val" id="v-length">10</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">thickness</span>
+        <input type="range" id="r-thick" min="1" max="8" value="2" step="1" oninput="update()">
+        <span class="ctrl-val" id="v-thick">2</span>
+      </div>
+      <div class="ctrl-row" id="gap-row">
+        <span class="ctrl-label">gap</span>
+        <input type="range" id="r-gap" min="0" max="20" value="4" step="1" oninput="update()">
+        <span class="ctrl-val" id="v-gap">4</span>
+      </div>
+      <div class="ctrl-row" id="radius-row" style="display:none">
+        <span class="ctrl-label">radius</span>
+        <input type="range" id="r-radius" min="4" max="40" value="14" step="1" oninput="update()">
+        <span class="ctrl-val" id="v-radius">14</span>
+      </div>
+      <div class="ctrl-row" id="dot-row" style="display:none">
+        <span class="ctrl-label">dot size</span>
+        <input type="range" id="r-dot" min="1" max="10" value="3" step="1" oninput="update()">
+        <span class="ctrl-val" id="v-dot">3</span>
+      </div>
+      <div class="ctrl-row" id="custom-row" style="display:none">
+        <span class="ctrl-label">custom png</span>
+        <input type="file" id="custom-image" accept="image/png" onchange="loadCustomImage(this)">
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="section-title">color</div>
+      <div class="color-grid">
+        <div class="color-dot active" style="background:#00FF00" data-color="#00FF00" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#FFFFFF" data-color="#FFFFFF" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#FF4444" data-color="#FF4444" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#FF7F00" data-color="#FF7F00" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#FFD700" data-color="#FFD700" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#06b100" data-color="#06b100" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#00BFFF" data-color="#00BFFF" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#0f0288" data-color="#0f0288" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#FF69B4" data-color="#FF69B4" onclick="setColor(this)"></div>
+        <div class="color-dot" style="background:#8404AF" data-color="#8404AF" onclick="setColor(this)"></div>
+      </div>
+      <div class="color-picker-row">
+        <input type="color" id="custom-color" value="#00FF00" onchange="setCustomColor(this.value)">
+        <span style="font-size:11px;color:white">custom</span>
+        <span id="hex-display" style="font-size:11px;font-weight:500;color:white;font-family:var(--font-mono)">#00FF00</span>
+      </div>
+      <div class="ctrl-row" style="margin-top:7px;margin-bottom:0">
+        <span class="ctrl-label">opacity</span>
+        <input type="range" id="r-opacity" min="10" max="100" value="100" step="1" oninput="update()">
+        <span class="ctrl-val" id="v-opacity">100%</span>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="section-title">outline</div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">width</span>
+        <input type="range" id="r-outline" min="0" max="4" value="1" step="1" oninput="update()">
+        <span class="ctrl-val" id="v-outline">1</span>
+      </div>
+      <div class="ctrl-row" style="margin-bottom:0">
+        <span class="ctrl-label">color</span>
+        <input type="color" id="outline-color" value="#000000" onchange="update()">
+        <span style="font-size:11px;color:white">outline color</span>
+      </div>
+  <div class="ctrl-row" id="dot-outline-row">
+    <span class="ctrl-label">dot width</span>
+    <input type="range" id="r-dot-outline" min="0" max="4" value="1" step="1" oninput="update()">
+    <span class="ctrl-val" id="v-dot-outline">1</span>
+  </div>
+  <div class="ctrl-row" id="dot-outline-color-row" style="margin-bottom:0">
+    <span class="ctrl-label">dot color</span>
+    <input type="color" id="dot-outline-color" value="#000000" onchange="update()">
+    <span style="font-size:11px;color:white">dot outline</span>
+  </div>
+</div>
+
+<div class="ctrl-section">
+  <div class="section-title">options</div>
+  <div class="toggle-row">
+    <span class="toggle-label">crosshair</span>
+    <button type="button" class="toggle on" id="t-enabled" onclick="toggleEnabled()"></button>
+  </div>
+  <div class="toggle-row">
+    <span class="toggle-label">show outline</span>
+    <button type="button" class="toggle on" id="t-outline" onclick="toggleOpt('outline')"></button>
+  </div>
+  <div class="toggle-row">
+    <span class="toggle-label">dot outline</span>
+    <button type="button" class="toggle on" id="t-dotOutline" onclick="toggleOpt('dotOutline')"></button>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="section-title">position</div>
+      <div class="dpad-section">
+        <div class="dpad">
+          <div class="dpad-empty"></div>
+          <button type="button" class="dpad-btn" onclick="moveOverlay(0,-1)">↑</button>
+          <div class="dpad-empty"></div>
+          <button type="button" class="dpad-btn" onclick="moveOverlay(-1,0)">←</button>
+          <div class="dpad-empty" style="background:rgb(40,40,40);border-radius:3px;border:0.5px solid rgba(255,255,255,0.08)"></div>
+          <button type="button" class="dpad-btn" onclick="moveOverlay(1,0)">→</button>
+          <div class="dpad-empty"></div>
+          <button type="button" class="dpad-btn" onclick="moveOverlay(0,1)">↓</button>
+          <div class="dpad-empty"></div>
+        </div>
+        <div>
+          <div class="dpad-info">offset: <span id="offset-display">0, 0</span></div>
+          <button type="button" class="dpad-reset" onclick="resetOverlay()">reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="hk-row">
+        <span class="hk-label">toggle hotkey</span>
+        <button type="button" class="hk-btn" id="hk-btn" onclick="startListening()">Insert</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const { ipcRenderer } = require('electron');
+const canvas = document.getElementById('crosshair-canvas');
+const ctx = canvas.getContext('2d');
+const CX = 100, CY = 100;
+let canvasDPR = window.devicePixelRatio || 1;
+
+const state = {
+  enabled: true,
+  style: 'cross', length: 10, thick: 2, gap: 4,
+  radius: 14, dot: 3, color: '#00FF00',
+  opacity: 100, outlineWidth: 1, outlineColor: '#000000',
+  dotOutline: true, dotOutlineWidth: 1, dotOutlineColor: '#000000',
+  centerdot: true, outline: true, animate: false, customImage: null,
+  offsetX: 0, offsetY: 0
+};
+
+const builtInPresets = {
+  default: {style:'cross',length:10,thick:2,gap:4,opacity:100,outline:true,outlineWidth:1,dotOutline:true,dotOutlineWidth:1,dotOutlineColor:'#000000',centerdot:true,animate:false},
+  dot: {style:'dot',dot:4,thick:2,opacity:100,outline:true,outlineWidth:1,dotOutline:true,dotOutlineWidth:1,dotOutlineColor:'#000000',centerdot:false,animate:false},
+  sniper: {style:'cross',length:18,thick:1,gap:8,opacity:80,outline:false,outlineWidth:0,dotOutline:false,dotOutlineWidth:0,dotOutlineColor:'#000000',centerdot:false,animate:false},
+  circle: {style:'circle',radius:14,thick:2,opacity:100,outline:true,outlineWidth:1,dotOutline:true,dotOutlineWidth:1,dotOutlineColor:'#000000',centerdot:true,animate:true}
+};
+
+function getUserPresets() {
+  try {
+    return JSON.parse(localStorage.getItem('userPresets') || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveUserPresets(presets) {
+  try {
+    localStorage.setItem('userPresets', JSON.stringify(presets));
+  } catch {}
+}
+
+function renderUserPresets() {
+  const container = document.getElementById('user-preset-row');
+  if (!container) return;
+  container.innerHTML = '';
+  const presets = getUserPresets();
+  Object.keys(presets).forEach(name => {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.gap = '1px';
+    wrapper.style.alignItems = 'center';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'preset-btn';
+    btn.textContent = name;
+    btn.onclick = () => applyPreset(name);
+    btn.style.flex = '1';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'preset-btn';
+    deleteBtn.textContent = '×';
+    deleteBtn.style.width = '10px';
+    deleteBtn.style.padding = '3px 0';
+    deleteBtn.style.fontSize = '10px';
+    deleteBtn.style.color = '#f87171';
+    deleteBtn.style.textAlign = 'center';
+    deleteBtn.onclick = () => deletePreset(name);
+
+    wrapper.appendChild(btn);
+    wrapper.appendChild(deleteBtn);
+    container.appendChild(wrapper);
+  });
+}
+
+function deletePreset(name) {
+  if (!confirm(`Delete preset "${name}"?`)) return;
+  const presets = getUserPresets();
+  delete presets[name];
+  saveUserPresets(presets);
+  renderUserPresets();
+}
+
+function savePreset() {
+  const input = document.getElementById('preset-name');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) {
+    alert('Please enter a name for the preset');
+    return;
+  }
+  if (builtInPresets[name]) {
+    if (!confirm(`"${name}" is a built-in preset. Overwrite?`)) return;
+  }
+  const presets = getUserPresets();
+  presets[name] = buildSettings();
+  saveUserPresets(presets);
+  renderUserPresets();
+  input.value = '';
+}
+
+function loadLastSettings() {
+  try {
+    const stored = localStorage.getItem('lastSettings');
+    if (!stored) return;
+    const settings = JSON.parse(stored);
+    if (!settings) return;
+    applySettings(settings);
+  } catch {
+    // ignore
+  }
+}
+
+function saveLastSettings() {
+  try {
+    localStorage.setItem('lastSettings', JSON.stringify(buildSettings()));
+  } catch {}
+}
+
+function loadCustomImageFromDataURL(dataUrl) {
+  state.customImage = new Image();
+  state.customImage.onload = () => {
+    if (!state.animate) draw();
+    sendSettings();
+  };
+  state.customImage.src = dataUrl;
+}
+
+function applySettings(settings) {
+  Object.assign(state, settings);
+  document.getElementById('r-length').value = state.length;
+  document.getElementById('r-thick').value = state.thick;
+  document.getElementById('r-gap').value = state.gap;
+  document.getElementById('r-radius').value = state.radius;
+  document.getElementById('r-dot').value = state.dot;
+  document.getElementById('r-opacity').value = state.opacity;
+  document.getElementById('r-outline').value = state.outlineWidth;
+  document.getElementById('outline-color').value = state.outlineColor;
+  document.getElementById('r-dot-outline').value = state.dotOutlineWidth;
+  document.getElementById('dot-outline-color').value = state.dotOutlineColor;
+  document.getElementById('custom-color').value = state.color;
+  document.getElementById('hex-display').textContent = state.color.toUpperCase();
+  document.getElementById('v-dot-outline').textContent = state.dotOutlineWidth;
+  document.getElementById('t-centerdot').classList.toggle('on', state.centerdot);
+  document.getElementById('t-outline').classList.toggle('on', state.outline);
+  document.getElementById('t-dotOutline').classList.toggle('on', state.dotOutline);
+  document.getElementById('t-animate').classList.toggle('on', state.animate);
+  document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('style-' + state.style).classList.add('active');
+
+  if (state.style === 'custom' && state.customImage) {
+    loadCustomImageFromDataURL(state.customImage);
+  }
+
+  updateRowVisibility();
+}
+
+let animFrame = null, animPhase = 0, listening = false, hotkey = 'Insert';
+
+function getColor(hex, alpha) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvasDPR = dpr;
+  const width = Math.max(2, Math.floor(rect.width * dpr));
+  const height = Math.max(2, Math.floor(rect.height * dpr));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+}
+
+function drawCross(scale) {
+  const L=state.length*scale, T=state.thick, G=state.gap*scale;
+  const col=getColor(state.color,state.opacity/100), outCol=getColor(state.outlineColor,state.opacity/100);
+  const OW=state.outline?state.outlineWidth:0;
+  const arms=[[CX,CY-G-L,CX,CY-G],[CX,CY+G,CX,CY+G+L],[CX-G-L,CY,CX-G,CY],[CX+G,CY,CX+G+L,CY]];
+  ctx.lineCap='round';
+  if(OW>0){ctx.strokeStyle=outCol;ctx.lineWidth=T+OW*2;arms.forEach(([x1,y1,x2,y2])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();});}
+  ctx.strokeStyle=col;ctx.lineWidth=T;arms.forEach(([x1,y1,x2,y2])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();});
+}
+
+function drawX(scale) {
+  const L=state.length*scale, T=state.thick, G=state.gap*scale;
+  const col=getColor(state.color,state.opacity/100), outCol=getColor(state.outlineColor,state.opacity/100);
+  const OW=state.outline?state.outlineWidth:0, d=G*0.707, dl=L*0.707;
+  const arms=[[CX-d-dl,CY-d-dl,CX-d,CY-d],[CX+d,CY+d,CX+d+dl,CY+d+dl],[CX+d,CY-d,CX+d+dl,CY-d-dl],[CX-d-dl,CY+d+dl,CX-d,CY+d]];
+  ctx.lineCap='round';
+  if(OW>0){ctx.strokeStyle=outCol;ctx.lineWidth=T+OW*2;arms.forEach(([x1,y1,x2,y2])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();});}
+  ctx.strokeStyle=col;ctx.lineWidth=T;arms.forEach(([x1,y1,x2,y2])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();});
+}
+
+function drawCircle(scale) {
+  const R=state.radius*scale, T=state.thick;
+  const col=getColor(state.color,state.opacity/100), outCol=getColor(state.outlineColor,state.opacity/100);
+  const OW=state.outline?state.outlineWidth:0;
+  if(OW>0){ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.strokeStyle=outCol;ctx.lineWidth=T+OW*2;ctx.stroke();}
+  ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.strokeStyle=col;ctx.lineWidth=T;ctx.stroke();
+}
+
+function drawDot() {
+  const R=state.dot;
+  const col=getColor(state.color,state.opacity/100);
+  const outCol=getColor(state.dotOutlineColor,state.opacity/100);
+  const OW=state.dotOutline?state.dotOutlineWidth:0;
+  if(OW>0){ctx.beginPath();ctx.arc(CX,CY,R+OW,0,Math.PI*2);ctx.fillStyle=outCol;ctx.fill();}
+  ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+}
+
+function drawCenterDot() {
+  const col=getColor(state.color,state.opacity/100);
+  const outCol=getColor(state.dotOutlineColor,state.opacity/100);
+  const OW=state.dotOutline?state.dotOutlineWidth:0;
+  if(OW>0){ctx.beginPath();ctx.arc(CX,CY,state.thick/2+OW,0,Math.PI*2);ctx.fillStyle=outCol;ctx.fill();}
+  ctx.beginPath();ctx.arc(CX,CY,state.thick/2,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+}
+
+function drawHeart(scale) {
+  const size = state.length * scale * 2.2;
+  const col = getColor(state.color, state.opacity/100);
+  const outCol = getColor(state.outlineColor, state.opacity/100);
+  const OW = state.outline ? state.outlineWidth : 0;
+
+  const x = CX;
+  const y = CY + size * 0.05;
+  const top = y - size * 0.55;
+
+  ctx.beginPath();
+  ctx.moveTo(x, y + size * 0.25);
+  ctx.bezierCurveTo(x + size * 0.7, y - size * 0.15, x + size * 0.3, top, x, top + size * 0.2);
+  ctx.bezierCurveTo(x - size * 0.3, top, x - size * 0.7, y - size * 0.15, x, y + size * 0.25);
+
+  if (OW > 0) {
+    ctx.strokeStyle = outCol;
+    ctx.lineWidth = state.thick + OW * 2;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = col;
+  ctx.fill();
+}
+
+function draw(scale) {
+  resizeCanvas();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const rect = canvas.getBoundingClientRect();
+  const drawSize = Math.min(rect.width, rect.height);
+  const baseScale = drawSize / 200;
+  const offsetX = (rect.width - drawSize) / 2;
+  const offsetY = (rect.height - drawSize) / 2;
+
+  ctx.setTransform(canvasDPR, 0, 0, canvasDPR, 0, 0);
+  ctx.translate(offsetX, offsetY);
+  ctx.scale(baseScale, baseScale);
+
+  scale = scale || 1;
+  if(state.style==='cross'){drawCross(scale);if(state.centerdot)drawCenterDot();}
+  else if(state.style==='heart'){drawHeart(scale);if(state.centerdot)drawCenterDot();}
+  else if(state.style==='circle'){drawCircle(scale);if(state.centerdot)drawCenterDot();}
+  else if(state.style==='dot'){drawDot();}
+  else if(state.style==='custom' && state.customImage){
+    const img = state.customImage;
+    ctx.drawImage(img, CX - img.width/2, CY - img.height/2);
+  }
+}
+
+window.addEventListener('resize', () => { if (!state.animate) draw(); });
+
+function buildSettings(){
+  return {
+    enabled: state.enabled,
+    style: state.style,
+    length: state.length,
+    radius: state.radius,
+    thick: state.thick,
+    gap: state.gap,
+    dot: state.dot,
+    color: state.color,
+    opacity: state.opacity,
+    outlineWidth: state.outlineWidth,
+    outlineColor: state.outlineColor,
+    dotOutline: state.dotOutline,
+    dotOutlineWidth: state.dotOutlineWidth,
+    dotOutlineColor: state.dotOutlineColor,
+    centerdot: state.centerdot,
+    offsetX: state.offsetX,
+    offsetY: state.offsetY,
+    customImage: state.customImage ? state.customImage.src : null
+  };
+}
+
+function sendSettings(){
+  ipcRenderer.send('crosshair-settings', buildSettings());
+  saveLastSettings();
+}
+
+function animLoop(){animPhase+=0.04;draw(1+0.08*Math.sin(animPhase));animFrame=requestAnimationFrame(animLoop);}
+
+function update() {
+  state.length=+document.getElementById('r-length').value;
+  state.thick=+document.getElementById('r-thick').value;
+  state.gap=+document.getElementById('r-gap').value;
+  state.radius=+document.getElementById('r-radius').value;
+  state.dot=+document.getElementById('r-dot').value;
+  state.opacity=+document.getElementById('r-opacity').value;
+  state.outlineWidth=+document.getElementById('r-outline').value;
+  state.outlineColor=document.getElementById('outline-color').value;
+  state.dotOutlineWidth=+document.getElementById('r-dot-outline').value;
+  state.dotOutlineColor=document.getElementById('dot-outline-color').value;
+  document.getElementById('v-length').textContent=state.length;
+  document.getElementById('v-thick').textContent=state.thick;
+  document.getElementById('v-gap').textContent=state.gap;
+  document.getElementById('v-radius').textContent=state.radius;
+  document.getElementById('v-dot').textContent=state.dot;
+  document.getElementById('v-opacity').textContent=state.opacity+'%';
+  document.getElementById('v-outline').textContent=state.outlineWidth;
+  document.getElementById('v-dot-outline').textContent=state.dotOutlineWidth;
+  updateRowVisibility();
+  if(!state.animate)draw();
+  sendSettings();
+}
+
+function updateRowVisibility() {
+  const isCircle=state.style==='circle', isDot=state.style==='dot', isCustom=state.style==='custom';
+  document.getElementById('radius-row').style.display=isCircle?'':'none';
+  document.getElementById('dot-row').style.display=isDot?'':'none';
+  document.getElementById('custom-row').style.display=isCustom?'':'none';
+  document.getElementById('length-row').style.display=(isDot||isCircle||isCustom)?'none':'';
+  document.getElementById('gap-row').style.display=(isDot||isCustom)?'none':'';
+  document.getElementById('dot-outline-row').style.display='';
+  document.getElementById('dot-outline-color-row').style.display='';
+}
+
+function setStyle(s) {
+  state.style=s;
+  document.querySelectorAll('.style-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('style-'+s).classList.add('active');
+  updateRowVisibility();
+  if(!state.animate)draw();
+  sendSettings();
+}
+
+function setColor(el) {
+  state.color=el.dataset.color;
+  document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('custom-color').value=state.color;
+  document.getElementById('hex-display').textContent=state.color.toUpperCase();
+  if(!state.animate)draw();
+  sendSettings();
+}
+
+function setCustomColor(val) {
+  state.color=val;
+  document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active'));
+  document.getElementById('hex-display').textContent=val.toUpperCase();
+  if(!state.animate)draw();
+  sendSettings();
+}
+
+function loadCustomImage(input) {
+  const file = input.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      state.customImage = new Image();
+      state.customImage.src = e.target.result;
+      state.customImage.onload = () => {
+        if (!state.animate) draw();
+        sendSettings();
+      };
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function toggleOpt(key) {
+  state[key]=!state[key];
+  document.getElementById('t-'+key).classList.toggle('on',state[key]);
+  if(key==='outline' && !state.outline){
+    state.dotOutline = false;
+    document.getElementById('t-dotOutline').classList.toggle('on', false);
+  }
+  updateRowVisibility();
+  if(key==='animate'){
+    if(state.animate){animPhase=0;animLoop();}
+    else{cancelAnimationFrame(animFrame);draw();}
+  } else { if(!state.animate)draw(); }
+  sendSettings();
+}
+
+function toggleEnabled() {
+  state.enabled = !state.enabled;
+  document.getElementById('t-enabled').classList.toggle('on', state.enabled);
+  ipcRenderer.send('toggle-overlay', state.enabled);
+  sendSettings();
+}
+
+function applyPreset(name) {
+  const userPresets = getUserPresets();
+  const preset = userPresets[name] || builtInPresets[name];
+  if (!preset) return;
+  applySettings(preset);
+  cancelAnimationFrame(animFrame);
+  if (state.animate) { animPhase = 0; animLoop(); }
+  update();
+}
+
+function moveOverlay(dx, dy) {
+  state.offsetX += dx * 5;
+  state.offsetY += dy * 5;
+  document.getElementById('offset-display').textContent = state.offsetX + ', ' + state.offsetY;
+  sendSettings();
+}
+
+function resetOverlay() {
+  state.offsetX = 0;
+  state.offsetY = 0;
+  document.getElementById('offset-display').textContent = '0, 0';
+  sendSettings();
+}
+
+function startListening() {
+  listening=true;
+  const btn=document.getElementById('hk-btn');
+  btn.textContent='press key...';
+  btn.classList.add('listening');
+}
+
+document.addEventListener('keydown',(e)=>{
+  if(!listening)return;
+  e.preventDefault();
+  hotkey=e.key==='Escape'?'Insert':(e.key.length===1?e.key.toUpperCase():e.key);
+  const btn=document.getElementById('hk-btn');
+  btn.textContent=hotkey;
+  btn.classList.remove('listening');
+  listening=false;
+});
+
+ipcRenderer.on('hotkey-triggered', () => {
+  toggleEnabled();
+});
+
+renderUserPresets();
+loadLastSettings();
+updateRowVisibility();
+draw();
+sendSettings();
+</script>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    overflow: hidden;
+  }
+  canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script>
+const { ipcRenderer } = require('electron');
+
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+
+let customImage = null;
+
+const state = {
+  enabled: true,
+  style: 'cross',
+  length: 10,
+  radius: 14,
+  thick: 2,
+  gap: 4,
+  dot: 3,
+  color: '#00FF00',
+  opacity: 100,
+  outlineWidth: 1,
+  outlineColor: '#000000',
+  centerdot: true,
+  offsetX: 0,
+  offsetY: 0,
+  customImage: null
+};
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  draw();
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function getColor(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function drawCross(cx, cy, scale) {
+  const L = state.length * scale;
+  const T = state.thick;
+  const G = state.gap * scale;
+  const col = getColor(state.color, state.opacity / 100);
+  const outCol = getColor(state.outlineColor, state.opacity / 100);
+  const OW = state.outlineWidth ? state.outlineWidth : 0;
+  const arms = [
+    [cx, cy - G - L, cx, cy - G],
+    [cx, cy + G, cx, cy + G + L],
+    [cx - G - L, cy, cx - G, cy],
+    [cx + G, cy, cx + G + L, cy],
+  ];
+  ctx.lineCap = 'round';
+  if (OW > 0) {
+    ctx.strokeStyle = outCol;
+    ctx.lineWidth = T + OW * 2;
+    arms.forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); });
+  }
+  ctx.strokeStyle = col;
+  ctx.lineWidth = T;
+  arms.forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); });
+}
+
+function drawX(cx, cy, scale) {
+  const L = state.length * scale;
+  const T = state.thick;
+  const G = state.gap * scale;
+  const col = getColor(state.color, state.opacity / 100);
+  const outCol = getColor(state.outlineColor, state.opacity / 100);
+  const OW = state.outlineWidth ? state.outlineWidth : 0;
+  const d = G * 0.707;
+  const dl = L * 0.707;
+  const arms = [
+    [cx - d - dl, cy - d - dl, cx - d, cy - d],
+    [cx + d, cy + d, cx + d + dl, cy + d + dl],
+    [cx + d, cy - d, cx + d + dl, cy - d - dl],
+    [cx - d - dl, cy + d + dl, cx - d, cy + d],
+  ];
+  ctx.lineCap = 'round';
+  if (OW > 0) {
+    ctx.strokeStyle = outCol;
+    ctx.lineWidth = T + OW * 2;
+    arms.forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); });
+  }
+  ctx.strokeStyle = col;
+  ctx.lineWidth = T;
+  arms.forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); });
+}
+
+function drawCircle(cx, cy, scale) {
+  const R = state.radius * scale;
+  const T = state.thick;
+  const col = getColor(state.color, state.opacity / 100);
+  const outCol = getColor(state.outlineColor, state.opacity / 100);
+  const OW = state.outlineWidth ? state.outlineWidth : 0;
+  if (OW > 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = outCol;
+    ctx.lineWidth = T + OW * 2;
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = col;
+  ctx.lineWidth = T;
+  ctx.stroke();
+}
+
+function drawDot(cx, cy) {
+  const R = state.dot;
+  const col = getColor(state.color, state.opacity / 100);
+  const outCol = getColor(state.outlineColor, state.opacity / 100);
+  const OW = state.outlineWidth ? state.outlineWidth : 0;
+  if (OW > 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + OW, 0, Math.PI * 2);
+    ctx.fillStyle = outCol;
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.fillStyle = col;
+  ctx.fill();
+}
+
+function drawCenterDot(cx, cy) {
+  const col = getColor(state.color, state.opacity / 100);
+  const outCol = getColor(state.outlineColor, state.opacity / 100);
+  const OW = state.outlineWidth ? state.outlineWidth : 0;
+  if (OW > 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, state.thick / 2 + OW, 0, Math.PI * 2);
+    ctx.fillStyle = outCol;
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, state.thick / 2, 0, Math.PI * 2);
+  ctx.fillStyle = col;
+  ctx.fill();
+}
+
+function loadCustomImage(src) {
+  if (!src) {
+    customImage = null;
+    return;
+  }
+  customImage = new Image();
+  customImage.onload = () => draw();
+  customImage.src = src;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!state.enabled) return;
+
+  const cx = Math.floor(canvas.width / 2) + (state.offsetX || 0);
+  const cy = Math.floor(canvas.height / 2) + (state.offsetY || 0);
+
+  if (state.style === 'cross') {
+    drawCross(cx, cy, 1);
+    if (state.centerdot) drawCenterDot(cx, cy);
+  } else if (state.style === 'x') {
+    drawX(cx, cy, 1);
+    if (state.centerdot) drawCenterDot(cx, cy);
+  } else if (state.style === 'circle') {
+    drawCircle(cx, cy, 1);
+    if (state.centerdot) drawCenterDot(cx, cy);
+  } else if (state.style === 'dot') {
+    drawDot(cx, cy);
+  } else if (state.style === 'custom' && customImage) {
+    ctx.drawImage(customImage, cx - customImage.width / 2, cy - customImage.height / 2);
+  }
+}
+
+ipcRenderer.on('crosshair-settings', (event, s) => {
+  const prevCustom = state.customImage;
+  Object.assign(state, s);
+  if (s.customImage && s.customImage !== prevCustom) {
+    loadCustomImage(s.customImage);
+  }
+  draw();
+});
+
+// ensure initial settings are applied
+draw();
+</script>
+</body>
+</html>

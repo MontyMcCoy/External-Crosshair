@@ -1,0 +1,34 @@
+{
+  "name": "montys-external-crosshair",
+  "version": "1.0.0",
+  "description": "Monty's External Crosshair - Screen overlay tool",
+  "author": "Monty",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.monty.crosshair",
+    "productName": "Monty's External Crosshair",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "main.js",
+      "dashboard.html",
+      "overlay.html",
+      "icon.ico",
+      "package.json"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}
