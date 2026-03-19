@@ -316,7 +316,7 @@ input[type=color] {
           <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" fill="currentColor"/></svg>dot
         </button>
         <button type="button" class="style-btn" id="style-heart" onclick="setStyle('heart')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-4.35-6-9.5S7 4 12 8.5 18 4 18 11.5 12 21 12 21z"/></svg>heart
+          <svg viewBox="0 0 20 20" fill="currentColor" stroke="none"><path d="M10 17.5S3.5 13 3.5 8.5C3.5 5.5 5.5 3 8 3c1.5 0 2.8 0.8 4 2 1.2-1.2 2.5-2 4-2 2.5 0 4.5 2.5 4.5 5.5 0 4.5-6.5 9-9.5 9.5z"/></svg>heart
         </button>
         <button type="button" class="style-btn" id="style-custom" onclick="setStyle('custom')">
           <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="6" r="1" fill="currentColor"/><path d="M2 14l4-4 4 4" stroke="currentColor" stroke-width="1.5"/></svg>custom
@@ -660,8 +660,8 @@ function drawCircle(scale) {
 function drawDot() {
   const R=state.dot;
   const col=getColor(state.color,state.opacity/100);
-  const outCol=getColor(state.dotOutlineColor,state.opacity/100);
-  const OW=state.dotOutline?state.dotOutlineWidth:0;
+  const outCol=getColor(state.outlineColor,state.opacity/100);
+  const OW=state.outlineWidth?state.outlineWidth:0;
   if(OW>0){ctx.beginPath();ctx.arc(CX,CY,R+OW,0,Math.PI*2);ctx.fillStyle=outCol;ctx.fill();}
   ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
 }
@@ -669,7 +669,7 @@ function drawDot() {
 function drawCenterDot() {
   const col=getColor(state.color,state.opacity/100);
   const outCol=getColor(state.dotOutlineColor,state.opacity/100);
-  const OW=state.dotOutline?state.dotOutlineWidth:0;
+  const OW=state.dotOutlineWidth?state.dotOutlineWidth:0;
   if(OW>0){ctx.beginPath();ctx.arc(CX,CY,state.thick/2+OW,0,Math.PI*2);ctx.fillStyle=outCol;ctx.fill();}
   ctx.beginPath();ctx.arc(CX,CY,state.thick/2,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
 }
@@ -788,8 +788,6 @@ function updateRowVisibility() {
   document.getElementById('custom-row').style.display=isCustom?'':'none';
   document.getElementById('length-row').style.display=(isDot||isCircle||isCustom)?'none':'';
   document.getElementById('gap-row').style.display=(isDot||isCustom)?'none':'';
-  document.getElementById('dot-outline-row').style.display='';
-  document.getElementById('dot-outline-color-row').style.display='';
 }
 
 function setStyle(s) {
