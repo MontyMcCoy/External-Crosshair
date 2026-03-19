@@ -41,7 +41,11 @@ const state = {
   opacity: 100,
   outlineWidth: 1,
   outlineColor: '#000000',
+  dotOutline: true,
+  dotOutlineWidth: 1,
+  dotOutlineColor: '#000000',
   centerdot: true,
+  outline: true,
   offsetX: 0,
   offsetY: 0,
   customImage: null
@@ -151,8 +155,8 @@ function drawDot(cx, cy) {
 
 function drawCenterDot(cx, cy) {
   const col = getColor(state.color, state.opacity / 100);
-  const outCol = getColor(state.outlineColor, state.opacity / 100);
-  const OW = state.outlineWidth ? state.outlineWidth : 0;
+  const outCol = getColor(state.dotOutlineColor, state.opacity / 100);
+  const OW = state.dotOutlineWidth ? state.dotOutlineWidth : 0;
   if (OW > 0) {
     ctx.beginPath();
     ctx.arc(cx, cy, state.thick / 2 + OW, 0, Math.PI * 2);
@@ -161,6 +165,31 @@ function drawCenterDot(cx, cy) {
   }
   ctx.beginPath();
   ctx.arc(cx, cy, state.thick / 2, 0, Math.PI * 2);
+  ctx.fillStyle = col;
+  ctx.fill();
+}
+
+function drawHeart(cx, cy, scale) {
+  const size = state.length * scale * 2.2;
+  const col = getColor(state.color, state.opacity / 100);
+  const outCol = getColor(state.outlineColor, state.opacity / 100);
+  const OW = state.outlineWidth ? state.outlineWidth : 0;
+
+  const x = cx;
+  const y = cy + size * 0.05;
+  const top = y - size * 0.55;
+
+  ctx.beginPath();
+  ctx.moveTo(x, y + size * 0.25);
+  ctx.bezierCurveTo(x + size * 0.7, y - size * 0.15, x + size * 0.3, top, x, top + size * 0.2);
+  ctx.bezierCurveTo(x - size * 0.3, top, x - size * 0.7, y - size * 0.15, x, y + size * 0.25);
+
+  if (OW > 0) {
+    ctx.strokeStyle = outCol;
+    ctx.lineWidth = state.thick + OW * 2;
+    ctx.stroke();
+  }
+
   ctx.fillStyle = col;
   ctx.fill();
 }
@@ -190,6 +219,9 @@ function draw() {
     if (state.centerdot) drawCenterDot(cx, cy);
   } else if (state.style === 'circle') {
     drawCircle(cx, cy, 1);
+    if (state.centerdot) drawCenterDot(cx, cy);
+  } else if (state.style === 'heart') {
+    drawHeart(cx, cy, 1);
     if (state.centerdot) drawCenterDot(cx, cy);
   } else if (state.style === 'dot') {
     drawDot(cx, cy);
